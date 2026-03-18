@@ -56,13 +56,13 @@ st.markdown("""
 <style>
     /* 隐藏默认样式 */
     .stApp .deployButton { display: none; }
-    
+
     /* 侧边栏样式 */
     .css-1d391kg { background-color: #f8f9fa; }
-    
+
     /* 文件上传器样式 */
     .stFileUploader { border: 3px dashed #667eea; border-radius: 15px; padding: 30px; }
-    
+
     /* 按钮样式 */
     .stButton > button { background-color: #667eea; color: white; border: none; padding: 15px 40px; border-radius: 30px; font-size: 1.2rem; font-weight: bold; }
     .stButton > button:hover { background-color: #764ba2; }
@@ -91,40 +91,40 @@ with st.sidebar:
         </ol>
     </div>
     """, unsafe_allow_html=True)
-    
+
     st.markdown("<br>", unsafe_allow_html=True)
-    
+
     # 状态面板
     st.markdown("""
     <div style='background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);'>
         <h2 style='color: #667eea; font-size: 1.5rem; margin-bottom: 20px;'>📊 上传状态</h2>
     """, unsafe_allow_html=True)
-    
+
     if 'price_template' in st.session_state:
         st.success("✅ 价格模板已上传")
         st.caption(f"📄 {st.session_state.price_template.name}")
     else:
         st.warning("⏳ 等待上传价格模板")
         st.caption("请上传包含单价的Excel文件")
-    
+
     st.markdown("<br>", unsafe_allow_html=True)
-    
+
     if 'style_template' in st.session_state:
         st.success("✅ 样式模板已上传")
         st.caption(f"📄 {st.session_state.style_template.name}")
     else:
         st.warning("⏳ 等待上传样式模板")
         st.caption("请上传包含格式的Excel文件")
-    
+
     st.markdown("<br>", unsafe_allow_html=True)
-    
+
     if 'dxf_file' in st.session_state:
         st.success("✅ DXF图纸已上传")
         st.caption(f"📐 {st.session_state.dxf_file.name}")
     else:
         st.warning("⏳ 等待上传DXF图纸")
         st.caption("请上传CAD绘制的DXF文件")
-    
+
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ========== 主内容区 ==========
@@ -144,14 +144,14 @@ with col1:
         <p style='color: #666; margin: 0;'>包含单价信息的Excel文件</p>
     </div>
     """, unsafe_allow_html=True)
-    
+
     price_template = st.file_uploader(
         "👆 点击或拖拽上传价格模板",
         type=['xlsx', 'xls'],
         key='price_template_upload',
         label_visibility="collapsed"
     )
-    
+
     if price_template:
         st.session_state.price_template = price_template
         st.success(f"✅ 已上传: **{price_template.name}**")
@@ -164,14 +164,14 @@ with col2:
         <p style='color: #666; margin: 0;'>包含格式的报价单Excel文件</p>
     </div>
     """, unsafe_allow_html=True)
-    
+
     style_template = st.file_uploader(
         "👆 点击或拖拽上传样式模板",
         type=['xlsx', 'xls'],
         key='style_template_upload',
         label_visibility="collapsed"
     )
-    
+
     if style_template:
         st.session_state.style_template = style_template
         st.success(f"✅ 已上传: **{style_template.name}**")
@@ -227,8 +227,8 @@ st.markdown("<hr style='border: none; border-top: 2px solid #e9ecef; margin: 40p
 # 步骤5：生成按钮
 st.markdown("<h2 style='color: #667eea; margin-bottom: 20px;'>🚀 第四步：生成报价单</h2>", unsafe_allow_html=True)
 
-all_uploaded = ('price_template' in st.session_state and 
-                'style_template' in st.session_state and 
+all_uploaded = ('price_template' in st.session_state and
+                'style_template' in st.session_state and
                 'dxf_file' in st.session_state)
 
 if not all_uploaded:
@@ -252,40 +252,40 @@ if generate_btn:
     with st.spinner("🔄 正在生成报价单，请稍候..."):
         progress_bar = st.progress(0)
         status_text = st.empty()
-        
+
         try:
             # 1. 保存文件
             status_text.markdown("📁 正在保存上传的文件...")
             temp_dir = tempfile.mkdtemp()
-            
+
             price_template_path = os.path.join(temp_dir, "price_template.xlsx")
             style_template_path = os.path.join(temp_dir, "style_template.xlsx")
             dxf_path = os.path.join(temp_dir, "drawing.dxf")
-            
+
             with open(price_template_path, 'wb') as f:
                 f.write(st.session_state.price_template.read())
-            
+
             with open(style_template_path, 'wb') as f:
                 f.write(st.session_state.style_template.read())
-            
+
             with open(dxf_path, 'wb') as f:
                 f.write(st.session_state.dxf_file.read())
-            
+
             progress_bar.progress(20)
-            
+
             # 2. 解析DXF
             status_text.markdown("📐 正在解析DXF图纸...")
             doc = ezdxf.readfile(dxf_path)
             msp = doc.modelspace()
-            
+
             layer_counts = {}
             for entity in msp:
                 layer = entity.dxf.layer
                 layer_counts[layer] = layer_counts.get(layer, 0) + 1
-            
+
             st.info(f"📊 发现 **{len(layer_counts)}** 个图层")
             progress_bar.progress(40)
-            
+
             # 3. 加载价格
             status_text.markdown("💰 正在加载价格模板...")
             wb_price = openpyxl.load_workbook(price_template_path)
@@ -327,23 +327,23 @@ if generate_btn:
                         }
                     except (ValueError, TypeError):
                         pass
-            
+
             wb_price.close()
             st.success(f"💰 已加载 **{len(prices)}** 个工程项目")
             progress_bar.progress(60)
-            
+
             # 4. 生成Excel
             status_text.markdown("📋 正在生成报价单...")
             template_wb = openpyxl.load_workbook(style_template_path)
-            
+
             new_wb = openpyxl.Workbook()
             if 'Sheet' in new_wb.sheetnames:
                 del new_wb['Sheet']
-            
+
             for sheet_name in template_wb.sheetnames:
                 src_ws = template_wb[sheet_name]
                 dst_ws = new_wb.create_sheet(sheet_name)
-                
+
                 for i in range(1, src_ws.max_row + 1):
                     dst_ws.row_dimensions[i].height = src_ws.row_dimensions[i].height
                     for j in range(1, src_ws.max_column + 1):
@@ -356,19 +356,19 @@ if generate_btn:
                             dst_cell.fill = copy(src_cell.fill)
                             dst_cell.number_format = src_cell.number_format
                             dst_cell.alignment = copy(src_cell.alignment)
-                
+
                 for j in range(1, src_ws.max_column + 1):
                     col_letter = openpyxl.utils.get_column_letter(j)
                     dst_ws.column_dimensions[col_letter].width = src_ws.column_dimensions[col_letter].width
-                
+
                 for merge_range in src_ws.merged_cells.ranges:
                     try:
                         dst_ws.merge_cells(merge_range.coord)
                     except:
                         pass
-            
+
             progress_bar.progress(80)
-            
+
             # 5. 填充数据
             if '预算' in new_wb.sheetnames:
                 sheet_budget = new_wb['预算']
@@ -425,14 +425,14 @@ if generate_btn:
 
                         total_price += item_total
                         data_row += 1
-            
+
             output_path = os.path.join(temp_dir, "报价单.xlsx")
             new_wb.save(output_path)
             template_wb.close()
             new_wb.close()
-            
+
             progress_bar.progress(100)
-            
+
             # 成功提示
             st.markdown("<br>", unsafe_allow_html=True)
             st.markdown("""
@@ -440,13 +440,13 @@ if generate_btn:
                 <h2 style='color: white; margin: 0;'>✅ 报价单生成成功！</h2>
             </div>
             """, unsafe_allow_html=True)
-            
+
             st.markdown(f"""
             <div style='background: #d4edda; padding: 25px; border-radius: 10px; border: 2px solid #c3e6cb; text-align: center; margin: 20px 0;'>
                 <h1 style='color: #155724; margin: 0;'>💰 总价: ￥{total_price:,.2f}</h1>
             </div>
             """, unsafe_allow_html=True)
-            
+
             # 下载按钮
             with open(output_path, 'rb') as f:
                 st.download_button(
@@ -456,11 +456,11 @@ if generate_btn:
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     use_container_width=True
                 )
-            
+
             # 图层统计
             st.markdown("<br>", unsafe_allow_html=True)
             st.markdown("<h2 style='color: #667eea; margin-bottom: 20px;'>📊 图层统计</h2>", unsafe_allow_html=True)
-            
+
             layer_data = []
             for layer, count in sorted(layer_counts.items(), key=lambda x: -x[1]):
                 project_info = find_matching_project(layer)
@@ -474,10 +474,10 @@ if generate_btn:
                         '单价': f'￥{price:,.2f}',
                         '总价': f'￥{total:,.2f}'
                     })
-            
+
             if layer_data:
                 st.dataframe(layer_data, use_container_width=True, hide_index=True)
-        
+
         except Exception as e:
             st.markdown(f"""
             <div style='background: #f8d7da; padding: 20px; border-radius: 10px; border: 2px solid #f5c6cb;'>
